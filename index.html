@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyNest Platform</title>
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel for in-browser JSX transpilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+// ─── THEME CONFIG ────────────────────────────────────────────────────────────
+const THEMES = {
+  light: {
+    bg: "#F7F5F0",
+    bgAlt: "#FFFDF8",
+    bgCard: "#FFFFFF",
+    bgMuted: "#F0EDE6",
+    accent: "#E8622A",
+    accentSoft: "#FFF0EA",
+    accentHover: "#C94E1E",
+    teal: "#1A9E8F",
+    tealSoft: "#E3F8F5",
+    navy: "#1B2B4B",
+    text: "#1B2B4B",
+    textMid: "#4A5568",
+    textMuted: "#8A9099",
+    border: "#E8E2D9",
+    shadow: "rgba(27,43,75,0.08)",
+    shadowMd: "rgba(27,43,75,0.14)",
+    badge: "#FEF3C7",
+    badgeText: "#92400E",
+  },
+  dark: {
+    bg: "#0F1624",
+    bgAlt: "#141E30",
+    bgCard: "#1A2540",
+    bgMuted: "#202D45",
+    accent: "#FF7043",
+    accentSoft: "#2A1A14",
+    accentHover: "#FF8C65",
+    teal: "#26C6B3",
+    tealSoft: "#0D2926",
+    navy: "#E2E8F4",
+    text: "#E2E8F4",
+    textMid: "#A8B5CC",
+    textMuted: "#637085",
+    border: "#263050",
+    shadow: "rgba(0,0,0,0.3)",
+    shadowMd: "rgba(0,0,0,0.5)",
+    badge: "#1E2E1A",
+    badgeText: "#6EE7B7",
+  },
+};
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const COURSES = [
+  { id: "cee", label: "CEE", full: "Common Entrance Exam", icon: "🏛️", color: "#E8622A", subjects: ["Physics","Chemistry","Mathematics","Biology"], students: "12,400+", year: "Class 11–12" },
+  { id: "ioe", label: "IOE", full: "Institute of Engineering", icon: "⚙️", color: "#1A9E8F", subjects: ["Physics","Chemistry","Mathematics","English"], students: "8,200+", year: "Class 11–12" },
+  { id: "neet", label: "NEET", full: "Nat. Eligibility cum Entrance Test", icon: "🩺", color: "#7C3AED", subjects: ["Physics","Chemistry","Biology"], students: "21,000+", year: "Class 11–12" },
+  { id: "jee", label: "JEE", full: "Joint Entrance Examination", icon: "🔬", color: "#D97706", subjects: ["Physics","Chemistry","Mathematics"], students: "31,000+", year: "Class 11–12" },
+];
+
+const MATERIALS = [
+  { title: "CEE Physics Notes 2025", course: "CEE", type: "Notes", pages: 84, downloads: 4210, tag: "Free" },
+  { title: "IOE Model Questions Set 1", course: "IOE", type: "Practice Paper", pages: 20, downloads: 3105, tag: "Free" },
+  { title: "NEET Biology Full Revision", course: "NEET", type: "Notes", pages: 120, downloads: 5870, tag: "Free" },
+  { title: "JEE Mains 2024 Solutions", course: "JEE", type: "Solutions", pages: 48, downloads: 7200, tag: "Free" },
+  { title: "CEE Chemistry Formula Sheet", course: "CEE", type: "Cheatsheet", pages: 12, downloads: 6330, tag: "Free" },
+  { title: "IOE Entrance Mock Test 5", course: "IOE", type: "Mock Test", pages: 16, downloads: 2980, tag: "Free" },
+  { title: "JEE Advanced PYQ 2023", course: "JEE", type: "PYQ", pages: 64, downloads: 8100, tag: "Free" },
+  { title: "NEET Physics Quick Capsule", course: "NEET", type: "Cheatsheet", pages: 22, downloads: 4510, tag: "Free" },
+];
+
+const QUIZZES = [
+  { id: 1, subject: "Physics", course: "CEE/IOE", questions: 20, time: 25, difficulty: "Medium", plays: 4302 },
+  { id: 2, subject: "Biology", course: "NEET", questions: 30, time: 35, difficulty: "Hard", plays: 6100 },
+  { id: 3, subject: "Mathematics", course: "JEE", questions: 25, time: 30, difficulty: "Hard", plays: 5200 },
+  { id: 4, subject: "Chemistry", course: "CEE/JEE", questions: 20, time: 20, difficulty: "Easy", plays: 3811 },
+];
+
+const SAMPLE_QS = [
+  { q: "A ball is thrown vertically upward with initial velocity 20 m/s. What is the maximum height reached? (g = 10 m/s²)", opts: ["10 m","20 m","40 m","5 m"], ans: 1 },
+  { q: "The SI unit of electric charge is:", opts: ["Ampere","Volt","Coulomb","Watt"], ans: 2 },
+  { q: "Which of the following is NOT a noble gas?", opts: ["Helium","Neon","Nitrogen","Argon"], ans: 2 },
+  { q: "The derivative of sin(x) is:", opts: ["cos(x)","-cos(x)","tan(x)","-sin(x)"], ans: 0 },
+];
+
+const STATS = [
+  { label: "Active Students", value: "52K+", icon: "👨‍🎓" },
+  { label: "Free Resources", value: "1,800+", icon: "📚" },
+  { label: "Mock Tests", value: "340+", icon: "📝" },
+  { label: "Success Rate", value: "87%", icon: "🏆" },
+];
+
+const TESTIMONIALS = [
+  { name: "Aarav Sharma", course: "CEE 2024", avatar: "AS", text: "StudyNest's free notes and mock tests were the only thing I used for CEE prep. Scored 87%!", rank: "#42 Nationwide" },
+  { name: "Priya Thapa", course: "NEET 2024", avatar: "PT", text: "The NEET biology revision notes are incredibly detailed and absolutely free. Love this platform!", rank: "AIIMS Qualified" },
+  { name: "Rohan Gupta", course: "JEE 2024", avatar: "RG", text: "JEE PYQs with solutions in one place — this saved me so much time. Highly recommended!", rank: "JEE AIR 1204" },
+];
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const CourseTag = ({ course, t }) => {
+  const c = COURSES.find(c => c.label === course);
+  return (
+    <span style={{ background: c?.color + "22", color: c?.color, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, letterSpacing: 0.5 }}>
+      {course}
+    </span>
+  );
+};
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function StudyNest() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [page, setPage] = useState("home");
+  const [activeCourse, setActiveCourse] = useState("CEE");
+  const [quizState, setQuizState] = useState(null); // null | { qi, score, chosen, done }
+  const [mobileMenu, setMobileMenu] = useState(false);
+  const t = darkMode ? THEMES.dark : THEMES.light;
+
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sora', sans-serif; background: ${t.bg}; color: ${t.text}; transition: background 0.3s, color 0.3s; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: ${t.bgMuted}; } ::-webkit-scrollbar-thumb { background: ${t.accent}; border-radius: 10px; }
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+    input { font-family: inherit; }
+    .page-enter { animation: fadeUp 0.45s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(24px);} to { opacity:1; transform:none; } }
+    .card-hover { transition: transform 0.22s, box-shadow 0.22s; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 32px ${t.shadowMd}; }
+    .btn-primary { background: ${t.accent}; color: #fff; border-radius: 12px; padding: 12px 24px; font-weight: 700; font-size: 14px; transition: background 0.2s, transform 0.15s; letter-spacing: 0.3px; }
+    .btn-primary:hover { background: ${t.accentHover}; transform: translateY(-1px); }
+    .btn-outline { background: transparent; border: 1.5px solid ${t.border}; color: ${t.text}; border-radius: 12px; padding: 11px 22px; font-weight: 600; font-size: 14px; transition: border-color 0.2s, background 0.2s; }
+    .btn-outline:hover { border-color: ${t.accent}; background: ${t.accentSoft}; color: ${t.accent}; }
+    .btn-teal { background: ${t.teal}; color: #fff; border-radius: 12px; padding: 11px 22px; font-weight: 700; font-size: 14px; transition: opacity 0.2s; }
+    .btn-teal:hover { opacity: 0.88; }
+    .section-title { font-size: clamp(22px, 4vw, 34px); font-weight: 800; color: ${t.text}; }
+    .section-sub { font-size: 15px; color: ${t.textMid}; margin-top: 8px; line-height: 1.6; }
+    .tag { display: inline-block; background: ${t.badge}; color: ${t.badgeText}; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.4px; }
+    @media (max-width: 700px) {
+      .hide-mobile { display: none !important; }
+      .grid-2 { grid-template-columns: 1fr !important; }
+      .grid-3 { grid-template-columns: 1fr 1fr !important; }
+      .hero-btns { flex-direction: column; }
+    }
+  `;
+
+  // Nav
+  const NAV = [
+    { id: "home", label: "Home" },
+    { id: "courses", label: "Courses" },
+    { id: "materials", label: "Materials" },
+    { id: "tests", label: "Mock Tests" },
+    { id: "quiz", label: "Quiz" },
+  ];
+
+  const goto = (p) => { setPage(p); setMobileMenu(false); window.scrollTo(0,0); };
+
+  return (
+    <>
+      <style>{css}</style>
+      {/* NAV */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: t.bgCard, borderBottom: `1px solid ${t.border}`, boxShadow: `0 2px 12px ${t.shadow}` }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 20px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => goto("home")}>
+            <div style={{ width: 36, height: 36, background: `linear-gradient(135deg, ${t.accent}, ${t.teal})`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>📖</div>
+            <span style={{ fontWeight: 800, fontSize: 20, color: t.accent, fontFamily: "Lora, serif", letterSpacing: -0.5 }}>StudyNest</span>
+          </div>
+          {/* Desktop Nav */}
+          <div className="hide-mobile" style={{ display: "flex", gap: 4 }}>
+            {NAV.map(n => (
+              <button key={n.id} onClick={() => goto(n.id)} style={{ background: page === n.id ? t.accentSoft : "transparent", color: page === n.id ? t.accent : t.textMid, borderRadius: 10, padding: "8px 16px", fontWeight: 600, fontSize: 14, transition: "all 0.18s" }}>{n.label}</button>
+            ))}
+          </div>
+          {/* Right */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button onClick={() => setDarkMode(!darkMode)} style={{ width: 40, height: 40, borderRadius: 12, background: t.bgMuted, color: t.text, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }}>{darkMode ? "☀️" : "🌙"}</button>
+            <button className="btn-primary hide-mobile" onClick={() => goto("courses")} style={{ padding: "8px 18px", fontSize: 13 }}>Get Started</button>
+            <button onClick={() => setMobileMenu(!mobileMenu)} style={{ display: "none", width: 40, height: 40, borderRadius: 12, background: t.bgMuted, color: t.text, fontSize: 20, alignItems: "center", justifyContent: "center" }} className="show-mobile-flex">☰</button>
+          </div>
+        </div>
+        {/* Mobile menu — always render, toggle visibility */}
+        <div style={{ display: mobileMenu ? "block" : "none", background: t.bgCard, borderTop: `1px solid ${t.border}`, padding: "12px 20px 16px" }}>
+          {NAV.map(n => (
+            <button key={n.id} onClick={() => goto(n.id)} style={{ display: "block", width: "100%", textAlign: "left", background: page === n.id ? t.accentSoft : "transparent", color: page === n.id ? t.accent : t.text, borderRadius: 10, padding: "12px 16px", fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{n.label}</button>
+          ))}
+        </div>
+      </nav>
+
+      {/* PAGES */}
+      <div className="page-enter" key={page} style={{ minHeight: "calc(100vh - 64px)" }}>
+        {page === "home" && <HomePage t={t} goto={goto} setActiveCourse={setActiveCourse} darkMode={darkMode} />}
+        {page === "courses" && <CoursesPage t={t} goto={goto} activeCourse={activeCourse} setActiveCourse={setActiveCourse} />}
+        {page === "materials" && <MaterialsPage t={t} activeCourse={activeCourse} setActiveCourse={setActiveCourse} />}
+        {page === "tests" && <TestsPage t={t} goto={goto} setQuizState={setQuizState} />}
+        {page === "quiz" && <QuizPage t={t} quizState={quizState} setQuizState={setQuizState} />}
+      </div>
+
+      {/* DEV CTA */}
+      <div style={{ padding: "80px 24px", background: t.bgMuted, display: "flex", justifyContent: "center" }}>
+        <div style={{ maxWidth: 900, width: "100%", background: t.bgCard, borderRadius: 32, padding: "48px 40px", border: `1px solid ${t.border}`, boxShadow: `0 16px 48px ${t.shadow}`, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 40, position: "relative", overflow: "hidden" }}>
+          {/* Background decorations */}
+          <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${t.accent}22, transparent 70%)` }} />
+          <div style={{ position: "absolute", bottom: -50, left: 100, width: 300, height: 300, borderRadius: "50%", background: `radial-gradient(circle, ${t.teal}11, transparent 70%)` }} />
+          
+          <div style={{ flex: "1 1 400px", position: "relative" }}>
+            <div style={{ display: "inline-flex", background: t.accentSoft, color: t.accent, padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, letterSpacing: 0.5, marginBottom: 16 }}>
+              SYSTEM ARCHITECTURE
+            </div>
+            <h2 style={{ fontFamily: "Lora, serif", fontWeight: 800, fontSize: "clamp(28px, 4vw, 36px)", color: t.text, marginBottom: 12, lineHeight: 1.1 }}>
+              Engineered by <br /><span style={{ color: t.accent }}>Sushant Raj Mishra</span>
+            </h2>
+            <p style={{ color: t.textMid, fontSize: 15, lineHeight: 1.6, marginBottom: 28, maxWidth: 420 }}>
+              Experience the pinnacle of fluid UI motion and flawless scalable system architectures crafted to perfection.
+            </p>
+            <a href="https://sushantrm.com.np/" target="_blank" className="btn-primary" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "14px 28px", fontSize: 15 }}>
+              Hire Developer
+              <span style={{ fontSize: 18 }}>↗</span>
+            </a>
+          </div>
+
+          <div style={{ flex: "1 1 250px", display: "flex", justifyContent: "center" }}>
+            <div style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 24, padding: 32, width: "100%", maxWidth: 320, textAlign: "center", position: "relative", boxShadow: `0 4px 20px ${t.shadow}` }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: t.text, marginBottom: 6 }}>Dimensions</div>
+              <p style={{ color: t.textMuted, fontSize: 13, marginBottom: 28 }}>Tap to switch the visual mode</p>
+              
+              <div 
+                onClick={() => setDarkMode(!darkMode)}
+                style={{ margin: "0 auto", cursor: "pointer", width: 160, height: 60, borderRadius: 50, background: darkMode ? t.navy : "#E2E8F4", border: `2px solid ${darkMode ? t.border : "#fff"}`, position: "relative", transition: "all 0.3s cubic-bezier(0.4,0,0.2,1)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 18px" }}
+              >
+                <span style={{ fontSize: 20, filter: darkMode ? "grayscale(1) opacity(0.3)" : "none" }}>☀️</span>
+                <span style={{ fontSize: 20, filter: !darkMode ? "grayscale(1) opacity(0.3)" : "none" }}>🌙</span>
+                <div style={{ position: "absolute", top: 4, left: darkMode ? "calc(100% - 52px)" : 4, width: 48, height: 48, borderRadius: "50%", background: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,0.15)", transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", background: darkMode ? t.accent : "#F59E0B" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FOOTER */}
+      <footer style={{ background: t.navy, color: "#fff", padding: "48px 24px 28px", marginTop: 0 }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 32, marginBottom: 40 }}>
+            <div>
+              <div style={{ fontFamily: "Lora, serif", fontWeight: 800, fontSize: 22, marginBottom: 12, color: t.accent }}>StudyNest</div>
+              <p style={{ fontSize: 13, color: "#A8B5CC", lineHeight: 1.7 }}>Free, high-quality study resources for CEE, IOE, NEET & JEE aspirants across Nepal and India.</p>
+            </div>
+            {[["Courses","CEE","IOE","NEET","JEE"],["Resources","Free Notes","Mock Tests","PYQ Papers","Formula Sheets"],["Community","Forums","Leaderboard","Study Groups","Blog"]].map(([head,...items]) => (
+              <div key={head}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: "#E2E8F4", letterSpacing: 0.5 }}>{head}</div>
+                {items.map(i => <div key={i} style={{ fontSize: 13, color: "#637085", marginBottom: 8, cursor: "pointer" }}>{i}</div>)}
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: "1px solid #263050", paddingTop: 24, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, fontSize: 12, color: "#637085" }}>
+            <span>© 2025 StudyNest. All resources are free for students.</span>
+            <span>Made with ❤️ for aspirants</span>
+          </div>
+        </div>
+      </footer>
+    </>
+  );
+}
+
+// ─── HOME PAGE ────────────────────────────────────────────────────────────────
+function HomePage({ t, goto, setActiveCourse, darkMode }) {
+  return (
+    <div>
+      {/* HERO */}
+      <section style={{ background: `linear-gradient(135deg, ${t.bgAlt} 0%, ${t.accentSoft} 100%)`, padding: "72px 24px 80px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        {/* Decorative blobs */}
+        <div style={{ position: "absolute", top: -60, right: -60, width: 280, height: 280, borderRadius: "50%", background: `radial-gradient(circle, ${t.accent}18, transparent 70%)`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -40, left: -40, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${t.teal}18, transparent 70%)`, pointerEvents: "none" }} />
+        <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 40, padding: "6px 16px", fontSize: 12, fontWeight: 700, color: t.teal, marginBottom: 28, boxShadow: `0 2px 12px ${t.shadow}` }}>
+            🎓 100% FREE — No Subscriptions, No Paywalls
+          </div>
+          <h1 style={{ fontFamily: "Lora, serif", fontWeight: 700, fontSize: "clamp(32px,6vw,58px)", lineHeight: 1.15, color: t.text, marginBottom: 20 }}>
+            Crack <span style={{ color: t.accent }}>CEE, IOE,</span><br />
+            <span style={{ color: t.teal }}>NEET & JEE</span> — For Free.
+          </h1>
+          <p style={{ fontSize: "clamp(14px,2.5vw,18px)", color: t.textMid, lineHeight: 1.7, marginBottom: 36, maxWidth: 580, margin: "0 auto 36px" }}>
+            Access expert notes, model questions, mock tests, and interactive quizzes — all completely free for every aspirant.
+          </p>
+          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }} className="hero-btns">
+            <button className="btn-primary" onClick={() => goto("courses")} style={{ fontSize: 16, padding: "14px 32px" }}>Explore Courses →</button>
+            <button className="btn-outline" onClick={() => goto("materials")} style={{ fontSize: 16, padding: "14px 32px" }}>Free Materials</button>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section style={{ background: t.accent, padding: "28px 24px" }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+          {STATS.map(s => (
+            <div key={s.label} style={{ textAlign: "center", padding: "12px 8px" }}>
+              <div style={{ fontSize: 28, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontWeight: 800, fontSize: 24, color: "#fff" }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: 500, marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* COURSES GRID */}
+      <section style={{ padding: "72px 24px", background: t.bg }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <span className="tag">Our Courses</span>
+            <h2 className="section-title" style={{ marginTop: 10 }}>Choose Your Exam Path</h2>
+            <p className="section-sub">Structured content crafted by toppers and educators for each entrance exam.</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }} className="grid-2">
+            {COURSES.map(c => (
+              <div key={c.id} className="card-hover" onClick={() => { setActiveCourse(c.label); goto("courses"); }} style={{ background: t.bgCard, borderRadius: 20, padding: "28px 24px", border: `1px solid ${t.border}`, cursor: "pointer", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: c.color + "14" }} />
+                <div style={{ fontSize: 42, marginBottom: 14 }}>{c.icon}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontWeight: 800, fontSize: 28, color: c.color }}>{c.label}</span>
+                  <span style={{ fontSize: 12, background: c.color + "18", color: c.color, borderRadius: 20, padding: "2px 10px", fontWeight: 700 }}>Entrance</span>
+                </div>
+                <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 16 }}>{c.full}</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18 }}>
+                  {c.subjects.map(s => <span key={s} style={{ fontSize: 11, background: t.bgMuted, color: t.textMid, padding: "3px 10px", borderRadius: 20, fontWeight: 600 }}>{s}</span>)}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: t.textMuted, borderTop: `1px solid ${t.border}`, paddingTop: 14 }}>
+                  <span>👥 {c.students}</span>
+                  <span>📅 {c.year}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={{ padding: "64px 24px", background: t.bgAlt }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <span className="tag">Why StudyNest?</span>
+            <h2 className="section-title" style={{ marginTop: 10 }}>Everything You Need, Free</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
+            {[
+              { icon: "📄", title: "Expert Notes", desc: "Chapter-wise, concise, and exam-focused notes written by subject experts." },
+              { icon: "📊", title: "Mock Tests", desc: "Full-length timed mock tests that simulate the actual exam environment." },
+              { icon: "⚡", title: "Quick Quizzes", desc: "Topic-wise interactive quizzes to sharpen your recall and speed." },
+              { icon: "📂", title: "PYQ Library", desc: "10+ years of previous year questions with detailed step-by-step solutions." },
+              { icon: "📱", title: "Mobile First", desc: "Study anytime, anywhere. Works perfectly on all devices." },
+              { icon: "🆓", title: "Always Free", desc: "No premium plans, no ads. Everything is available to every student." },
+            ].map(f => (
+              <div key={f.title} style={{ background: t.bgCard, borderRadius: 18, padding: "24px 20px", border: `1px solid ${t.border}` }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: t.text, marginBottom: 6 }}>{f.title}</div>
+                <p style={{ fontSize: 13, color: t.textMuted, lineHeight: 1.65 }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section style={{ padding: "72px 24px", background: t.bg }}>
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 48 }}>
+            <span className="tag">Student Stories</span>
+            <h2 className="section-title" style={{ marginTop: 10 }}>Real Students, Real Success</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
+            {TESTIMONIALS.map(r => (
+              <div key={r.name} style={{ background: t.bgCard, borderRadius: 20, padding: "28px 24px", border: `1px solid ${t.border}`, boxShadow: `0 4px 16px ${t.shadow}` }}>
+                <div style={{ fontSize: 32, marginBottom: 16, color: t.accent }}>"</div>
+                <p style={{ fontSize: 14, color: t.textMid, lineHeight: 1.7, marginBottom: 20, fontStyle: "italic" }}>{r.text}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: `linear-gradient(135deg, ${t.accent}, ${t.teal})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: "#fff" }}>{r.avatar}</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: t.text }}>{r.name}</div>
+                    <div style={{ fontSize: 12, color: t.teal, fontWeight: 600 }}>{r.rank}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section style={{ padding: "72px 24px", background: `linear-gradient(135deg, ${t.accent}, ${t.teal})` }}>
+        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontFamily: "Lora, serif", fontWeight: 700, fontSize: "clamp(26px, 5vw, 42px)", color: "#fff", marginBottom: 16 }}>Your Dream Rank Starts Here 🚀</h2>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", marginBottom: 36, lineHeight: 1.7 }}>Join 52,000+ students who are already using StudyNest to ace their entrance exams.</p>
+          <button className="btn-primary" onClick={() => goto("materials")} style={{ background: "#fff", color: t.accent, fontSize: 16, padding: "14px 36px" }}>Start Studying Free →</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ─── COURSES PAGE ─────────────────────────────────────────────────────────────
+function CoursesPage({ t, goto, activeCourse, setActiveCourse }) {
+  const course = COURSES.find(c => c.label === activeCourse) || COURSES[0];
+  const syllabus = {
+    CEE: { Physics: ["Motion","Laws of Motion","Work & Energy","Thermodynamics","Waves","Optics","Electrostatics","Current Electricity","Magnetism","Modern Physics"], Chemistry: ["Atomic Structure","Periodic Table","Chemical Bonding","Thermodynamics","Equilibrium","Electrochemistry","Organic Chemistry","Polymers"], Mathematics: ["Algebra","Trigonometry","Coordinate Geometry","Calculus","Vectors","Statistics","Probability"], Biology: ["Cell Biology","Genetics","Evolution","Ecology","Human Physiology","Plant Biology"] },
+    IOE: { Physics: ["Mechanics","Thermodynamics","Waves","Optics","Modern Physics","Electromagnetism"], Chemistry: ["Physical Chemistry","Organic Chemistry","Inorganic Chemistry","Analytical Chemistry"], Mathematics: ["Calculus","Algebra","Trigonometry","Vectors","Statistics"], English: ["Grammar","Comprehension","Vocabulary","Writing Skills"] },
+    NEET: { Physics: ["Mechanics","Thermodynamics","Optics","Electromagnetism","Modern Physics"], Chemistry: ["Physical Chemistry","Organic Chemistry","Inorganic Chemistry"], Biology: ["Botany","Zoology","Ecology","Genetics","Cell Biology","Biomolecules"] },
+    JEE: { Physics: ["Mechanics","Electromagnetism","Modern Physics","Optics","Thermodynamics"], Chemistry: ["Physical Chemistry","Organic Chemistry","Inorganic Chemistry"], Mathematics: ["Algebra","Calculus","Coordinate Geometry","Trigonometry","Vectors & 3D","Probability"] },
+  };
+  const sub = syllabus[activeCourse] || {};
+
+  return (
+    <div style={{ padding: "48px 24px", maxWidth: 1180, margin: "0 auto" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 36 }}>
+        <span className="tag">Courses</span>
+        <h1 className="section-title" style={{ marginTop: 10 }}>Explore Your Course</h1>
+        <p className="section-sub">Select an exam and dive into its complete syllabus and resources.</p>
+      </div>
+
+      {/* Course Tabs */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 40 }}>
+        {COURSES.map(c => (
+          <button key={c.id} onClick={() => setActiveCourse(c.label)} style={{ background: activeCourse === c.label ? c.color : t.bgMuted, color: activeCourse === c.label ? "#fff" : t.textMid, borderRadius: 40, padding: "10px 22px", fontWeight: 700, fontSize: 15, transition: "all 0.2s", border: `2px solid ${activeCourse === c.label ? c.color : "transparent"}` }}>{c.icon} {c.label}</button>
+        ))}
+      </div>
+
+      {/* Course Detail */}
+      <div style={{ background: t.bgCard, borderRadius: 24, border: `1px solid ${t.border}`, overflow: "hidden", marginBottom: 40 }}>
+        <div style={{ background: `linear-gradient(135deg, ${course.color}22, ${t.bgCard})`, padding: "32px 28px", borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div style={{ fontSize: 56 }}>{course.icon}</div>
+            <div>
+              <h2 style={{ fontWeight: 800, fontSize: 32, color: course.color }}>{course.label}</h2>
+              <p style={{ color: t.textMid, fontSize: 15 }}>{course.full}</p>
+              <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: t.textMuted }}>👥 {course.students} students</span>
+                <span style={{ fontSize: 13, color: t.textMuted }}>📅 {course.year}</span>
+                <span style={{ fontSize: 13, color: t.teal, fontWeight: 700 }}>🆓 All Free</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "32px 28px" }}>
+          <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 24, color: t.text }}>Complete Syllabus</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+            {Object.entries(sub).map(([subj, topics]) => (
+              <div key={subj} style={{ background: t.bgMuted, borderRadius: 16, padding: "20px 18px" }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: course.color, marginBottom: 12 }}>{subj}</div>
+                {topics.map(tp => (
+                  <div key={tp} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 13, color: t.textMid }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: course.color, flexShrink: 0 }} />
+                    {tp}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        {[
+          { icon: "📄", label: "Free Notes", action: "materials" },
+          { icon: "📝", label: "Mock Tests", action: "tests" },
+          { icon: "⚡", label: "Quick Quiz", action: "quiz" },
+        ].map(a => (
+          <button key={a.label} onClick={() => goto(a.action)} style={{ background: t.bgCard, border: `1.5px solid ${t.border}`, borderRadius: 16, padding: "20px", display: "flex", alignItems: "center", gap: 14, fontWeight: 700, fontSize: 16, color: t.text, transition: "border-color 0.2s, background 0.2s" }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = course.color; e.currentTarget.style.background = course.color + "0D"; }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.background = t.bgCard; }}>
+            <span style={{ fontSize: 28 }}>{a.icon}</span> {a.label} →
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── MATERIALS PAGE ───────────────────────────────────────────────────────────
+function MaterialsPage({ t, activeCourse, setActiveCourse }) {
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const types = ["All", "Notes", "Practice Paper", "Mock Test", "PYQ", "Solutions", "Cheatsheet"];
+  const displayed = MATERIALS.filter(m => {
+    const courseMatch = filter === "All" || m.type === filter;
+    const searchMatch = m.title.toLowerCase().includes(search.toLowerCase()) || m.course.toLowerCase().includes(search.toLowerCase());
+    return courseMatch && searchMatch;
+  });
+
+  return (
+    <div style={{ padding: "48px 24px", maxWidth: 1180, margin: "0 auto" }}>
+      <div style={{ marginBottom: 36 }}>
+        <span className="tag">Free Library</span>
+        <h1 className="section-title" style={{ marginTop: 10 }}>Study Materials</h1>
+        <p className="section-sub">Download free notes, PYQs, and practice papers — no registration required.</p>
+      </div>
+
+      {/* Search & Filter */}
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 32, alignItems: "center" }}>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search materials..." style={{ flex: 1, minWidth: 200, padding: "12px 16px", borderRadius: 12, border: `1.5px solid ${t.border}`, background: t.bgCard, color: t.text, fontSize: 14, outline: "none" }} />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {types.map(tp => (
+            <button key={tp} onClick={() => setFilter(tp)} style={{ padding: "8px 14px", borderRadius: 40, fontSize: 12, fontWeight: 700, background: filter === tp ? t.accent : t.bgMuted, color: filter === tp ? "#fff" : t.textMid, transition: "all 0.18s" }}>{tp}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Materials Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+        {displayed.map((m, i) => {
+          const c = COURSES.find(c => c.label === m.course);
+          return (
+            <div key={i} className="card-hover" style={{ background: t.bgCard, borderRadius: 18, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+              <div style={{ background: (c?.color || t.accent) + "14", padding: "20px 20px 16px", borderBottom: `1px solid ${t.border}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                  <CourseTag course={m.course} t={t} />
+                  <span className="tag">{m.tag}</span>
+                </div>
+                <h3 style={{ fontWeight: 700, fontSize: 15, color: t.text, lineHeight: 1.4 }}>{m.title}</h3>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                <div style={{ display: "flex", gap: 16, fontSize: 12, color: t.textMuted, marginBottom: 16 }}>
+                  <span>📋 {m.type}</span>
+                  <span>📄 {m.pages} pages</span>
+                  <span>⬇️ {m.downloads.toLocaleString()}</span>
+                </div>
+                <button style={{ width: "100%", background: (c?.color || t.accent) + "18", color: c?.color || t.accent, border: `1.5px solid ${(c?.color || t.accent) + "44"}`, borderRadius: 10, padding: "10px", fontWeight: 700, fontSize: 13, transition: "all 0.18s" }}
+                  onMouseOver={e => { e.currentTarget.style.background = c?.color || t.accent; e.currentTarget.style.color = "#fff"; }}
+                  onMouseOut={e => { e.currentTarget.style.background = (c?.color || t.accent) + "18"; e.currentTarget.style.color = c?.color || t.accent; }}>
+                  ⬇️ Download Free
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {displayed.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: t.textMuted, fontSize: 15 }}>
+          No materials found. Try a different search or filter.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TESTS PAGE ───────────────────────────────────────────────────────────────
+function TestsPage({ t, goto, setQuizState }) {
+  const [selected, setSelected] = useState(null);
+
+  const startTest = (q) => {
+    setQuizState({ qi: 0, score: 0, chosen: null, done: false });
+    goto("quiz");
+  };
+
+  return (
+    <div style={{ padding: "48px 24px", maxWidth: 1180, margin: "0 auto" }}>
+      <div style={{ marginBottom: 36 }}>
+        <span className="tag">Practice Tests</span>
+        <h1 className="section-title" style={{ marginTop: 10 }}>Mock Tests & Quizzes</h1>
+        <p className="section-sub">Simulate real exam conditions with our timed mock tests.</p>
+      </div>
+
+      {/* Banner */}
+      <div style={{ background: `linear-gradient(135deg, ${t.accent}, ${t.teal})`, borderRadius: 20, padding: "32px 28px", marginBottom: 40, color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 20 }}>
+        <div>
+          <h2 style={{ fontWeight: 800, fontSize: 22, marginBottom: 6 }}>🏆 Weekly Grand Mock Test</h2>
+          <p style={{ fontSize: 14, opacity: 0.88 }}>Full-length CEE/IOE simulated exam — 100 questions, 120 minutes.</p>
+          <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {["Physics","Chemistry","Mathematics","Biology"].map(s => <span key={s} style={{ background: "rgba(255,255,255,0.2)", borderRadius: 20, padding: "3px 12px", fontSize: 12, fontWeight: 600 }}>{s}</span>)}
+          </div>
+        </div>
+        <button className="btn-primary" style={{ background: "#fff", color: t.accent, padding: "14px 28px", fontSize: 15 }} onClick={() => startTest(null)}>Start Test →</button>
+      </div>
+
+      {/* Quiz Cards */}
+      <h2 style={{ fontWeight: 700, fontSize: 20, marginBottom: 24, color: t.text }}>Available Topic Tests</h2>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 20 }}>
+        {QUIZZES.map(q => (
+          <div key={q.id} className="card-hover" style={{ background: t.bgCard, borderRadius: 20, border: `1px solid ${t.border}`, padding: "24px 22px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+              <CourseTag course={q.course.split("/")[0]} t={t} />
+              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: q.difficulty === "Hard" ? "#FEE2E2" : q.difficulty === "Medium" ? "#FEF3C7" : "#D1FAE5", color: q.difficulty === "Hard" ? "#DC2626" : q.difficulty === "Medium" ? "#D97706" : "#059669" }}>{q.difficulty}</span>
+            </div>
+            <h3 style={{ fontWeight: 700, fontSize: 17, color: t.text, marginBottom: 6 }}>{q.subject}</h3>
+            <p style={{ fontSize: 13, color: t.textMuted, marginBottom: 16 }}>{q.course} Topic Test</p>
+            <div style={{ display: "flex", gap: 16, fontSize: 12, color: t.textMuted, marginBottom: 18 }}>
+              <span>❓ {q.questions} Qs</span>
+              <span>⏱ {q.time} mins</span>
+              <span>▶️ {q.plays.toLocaleString()} plays</span>
+            </div>
+            <button className="btn-primary" style={{ width: "100%", padding: "10px" }} onClick={() => startTest(q)}>Start Quiz →</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Leaderboard Preview */}
+      <div style={{ marginTop: 56 }}>
+        <h2 style={{ fontWeight: 700, fontSize: 20, marginBottom: 24, color: t.text }}>🏅 Top Performers This Week</h2>
+        <div style={{ background: t.bgCard, borderRadius: 20, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+          {[
+            { rank: 1, name: "Aarav S.", score: "98/100", course: "CEE", medal: "🥇" },
+            { rank: 2, name: "Priya T.", score: "96/100", course: "NEET", medal: "🥈" },
+            { rank: 3, name: "Rohan G.", score: "95/100", course: "JEE", medal: "🥉" },
+            { rank: 4, name: "Anisha K.", score: "93/100", course: "IOE", medal: "🎖️" },
+          ].map((p, i) => (
+            <div key={p.rank} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 22px", borderBottom: i < 3 ? `1px solid ${t.border}` : "none", transition: "background 0.15s" }}
+              onMouseOver={e => e.currentTarget.style.background = t.bgMuted}
+              onMouseOut={e => e.currentTarget.style.background = "transparent"}>
+              <div style={{ fontSize: 22, width: 32, textAlign: "center" }}>{p.medal}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: t.text }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: t.textMuted }}>{p.course}</div>
+              </div>
+              <div style={{ fontWeight: 800, fontSize: 16, color: t.accent }}>{p.score}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── QUIZ PAGE ────────────────────────────────────────────────────────────────
+function QuizPage({ t, quizState, setQuizState }) {
+  const init = () => setQuizState({ qi: 0, score: 0, chosen: null, done: false });
+  useEffect(() => { if (!quizState) init(); }, []);
+
+  if (!quizState) return <div style={{ padding: 40, textAlign: "center", color: t.textMuted }}>Loading quiz...</div>;
+
+  const { qi, score, chosen, done } = quizState;
+  const q = SAMPLE_QS[qi];
+  const total = SAMPLE_QS.length;
+
+  const choose = (idx) => {
+    if (chosen !== null) return;
+    const correct = idx === q.ans;
+    setQuizState(prev => ({ ...prev, chosen: idx, score: correct ? prev.score + 1 : prev.score }));
+  };
+
+  const next = () => {
+    if (qi + 1 >= total) setQuizState(prev => ({ ...prev, done: true }));
+    else setQuizState(prev => ({ ...prev, qi: prev.qi + 1, chosen: null }));
+  };
+
+  const pct = Math.round((score / total) * 100);
+
+  return (
+    <div style={{ padding: "48px 24px", maxWidth: 760, margin: "0 auto" }}>
+      <div style={{ marginBottom: 36 }}>
+        <span className="tag">Live Quiz</span>
+        <h1 className="section-title" style={{ marginTop: 10 }}>Science & Math Quiz</h1>
+      </div>
+
+      {done ? (
+        <div style={{ background: t.bgCard, borderRadius: 24, border: `1px solid ${t.border}`, padding: "48px 32px", textAlign: "center" }}>
+          <div style={{ fontSize: 72, marginBottom: 16 }}>{pct >= 75 ? "🏆" : pct >= 50 ? "👍" : "📚"}</div>
+          <h2 style={{ fontWeight: 800, fontSize: 32, color: t.text, marginBottom: 8 }}>Quiz Complete!</h2>
+          <p style={{ fontSize: 18, color: t.textMid, marginBottom: 8 }}>You scored <span style={{ color: t.accent, fontWeight: 800 }}>{score}</span> out of <span style={{ fontWeight: 800 }}>{total}</span></p>
+          <div style={{ fontSize: 48, fontWeight: 800, color: pct >= 75 ? t.teal : pct >= 50 ? t.accent : "#DC2626", margin: "16px 0" }}>{pct}%</div>
+          <p style={{ color: t.textMuted, fontSize: 14, marginBottom: 32 }}>
+            {pct >= 75 ? "Excellent! You're well prepared." : pct >= 50 ? "Good effort! Keep practicing." : "Keep studying — you'll get there!"}
+          </p>
+          <button className="btn-primary" style={{ fontSize: 16, padding: "14px 32px" }} onClick={init}>Try Again 🔄</button>
+        </div>
+      ) : (
+        <div style={{ background: t.bgCard, borderRadius: 24, border: `1px solid ${t.border}`, overflow: "hidden" }}>
+          {/* Progress */}
+          <div style={{ padding: "20px 28px", borderBottom: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: t.textMid }}>Question {qi + 1} of {total}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: t.accent }}>Score: {score}</span>
+          </div>
+          <div style={{ padding: "2px 0", background: t.bgMuted }}>
+            <div style={{ height: 4, background: t.accent, width: `${((qi + 1) / total) * 100}%`, transition: "width 0.4s ease" }} />
+          </div>
+
+          {/* Question */}
+          <div style={{ padding: "32px 28px" }}>
+            <h2 style={{ fontWeight: 700, fontSize: "clamp(15px, 3vw, 18px)", color: t.text, lineHeight: 1.6, marginBottom: 28 }}>{q.q}</h2>
+
+            {/* Options */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {q.opts.map((opt, idx) => {
+                let bg = t.bgMuted;
+                let border = t.border;
+                let color = t.text;
+                if (chosen !== null) {
+                  if (idx === q.ans) { bg = "#D1FAE5"; border = "#059669"; color = "#065F46"; }
+                  else if (idx === chosen && chosen !== q.ans) { bg = "#FEE2E2"; border = "#DC2626"; color = "#991B1B"; }
+                  else { bg = t.bgMuted; border = t.border; color = t.textMuted; }
+                }
+                return (
+                  <button key={idx} onClick={() => choose(idx)} style={{ textAlign: "left", background: bg, border: `2px solid ${border}`, borderRadius: 14, padding: "16px 20px", fontSize: 14, fontWeight: 600, color, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 14 }}>
+                    <span style={{ width: 28, height: 28, borderRadius: "50%", border: `2px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, flexShrink: 0 }}>
+                      {chosen !== null && idx === q.ans ? "✓" : chosen !== null && idx === chosen && chosen !== q.ans ? "✗" : String.fromCharCode(65 + idx)}
+                    </span>
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next */}
+            {chosen !== null && (
+              <div style={{ marginTop: 28, display: "flex", justifyContent: "flex-end" }}>
+                <button className="btn-primary" style={{ fontSize: 15, padding: "12px 28px" }} onClick={next}>
+                  {qi + 1 >= total ? "See Results 🏁" : "Next Question →"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+    // Render the App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<StudyNest />);
+  </script>
+</body>
+</html>
